@@ -1,0 +1,57 @@
+---
+- hosts: all
+  tasks:
+    - name: Install Java
+      apt:
+        name: openjdk-8-jre-headless
+        state: present
+
+    - name: Create Elasticsearch directory
+      file:
+        path: /opt/elasticsearch
+        state: directory
+        owner: elasticsearch
+        group: elasticsearch
+
+    - name: Download Elasticsearch
+      get_url:
+        url: https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.4.2-linux-x86_64.tar.gz
+        dest: /opt/elasticsearch/elasticsearch.tar.gz
+        owner: elasticsearch
+        group: elasticsearch
+
+    - name: Extract Elasticsearch
+      unarchive:
+        src: /opt/elasticsearch/elasticsearch.tar.gz
+        dest: /opt/elasticsearch
+        owner: elasticsearch
+        group: elasticsearch
+
+    - name: Copy Elasticsearch configuration
+      template:
+        src: elasticsearch.yml.j2
+        dest: /opt/elasticsearch/config/elasticsearch.yml
+        owner: elasticsearch
+        group: elasticsearch
+
+    - name: Enable and start Elasticsearch service
+      systemd:
+        name: elasticsearch
+        state: started
+        enabled: yes
+
+- hosts: masters
+  tasks:
+    - name: Set discovery.zen.minimum_master_nodes
+      lineinfile:
+        path: /opt/elasticsearch/config/elasticsearch.yml
+        regexp: '^discovery.zen.minimum_master_nodes:'
+        line: discovery.zen.minimum_master_nodes: 2
+
+- hosts: data_nodes
+  tasks:
+    - name: Remove master-eligible option
+      lineinfile:
+        path: /opt/elasticsearch/config/elasticsearch.yml
+        regexp: '^node.master: true$'
+        line: node.master: false

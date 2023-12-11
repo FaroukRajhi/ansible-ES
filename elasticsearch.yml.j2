@@ -1,0 +1,13 @@
+cluster.name: my-elasticsearch-cluster
+
+node.name: "{{ ansible_hostname }}"
+node.data: true
+
+path.data: /var/lib/elasticsearch
+
+discovery.zen.ping.unicast.hosts:
+  - elasticnode1:9300
+  - elasticnode2:9300
+  - elasticnode3:9300
+
+http.port: 9200
